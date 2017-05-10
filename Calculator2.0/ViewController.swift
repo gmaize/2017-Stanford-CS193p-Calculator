@@ -40,6 +40,15 @@ class ViewController: UIViewController {
         brain.reset()
     }
     
+    @IBAction func deleteDigit(_ sender: UIButton) {
+        if userIsInTheMiddleOfTyping && display.text!.characters.count > 1 {
+            display.text!.remove(at: display.text!.index(before: display.text!.endIndex))
+        } else if userIsInTheMiddleOfTyping {
+            userIsInTheMiddleOfTyping = false
+            display.text = "0"
+        }
+    }
+    
     var displayValue: Double {
         get {
             return Double(display.text!)!
