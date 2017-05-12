@@ -9,12 +9,16 @@
 import UIKit
 
 class ViewController: UIViewController {
-
+    
+    var variables = Dictionary<String, Double>()
+    
     var userIsInTheMiddleOfTyping = false
     
     @IBOutlet weak var display: UILabel!
 
     @IBOutlet weak var historyDisplay: UILabel!
+    
+    @IBOutlet weak var variablesDisplay: UILabel!
     
     @IBAction func touchDigit(_ sender: UIButton) {
         if !brain.resultIsPending {
@@ -35,17 +39,68 @@ class ViewController: UIViewController {
     
     @IBAction func resetCalculator(_ sender: UIButton) {
         display.text = "0"
-        historyDisplay.text = " "
+        historyDisplay.text = ""
+        variables.removeAll(keepingCapacity: true)
+        updateVariableDisplay()
         userIsInTheMiddleOfTyping = false
         brain.reset()
     }
     
-    @IBAction func deleteDigit(_ sender: UIButton) {
+
+    @IBAction func undo(_ sender: UIButton) {
         if userIsInTheMiddleOfTyping && display.text!.characters.count > 1 {
             display.text!.remove(at: display.text!.index(before: display.text!.endIndex))
         } else if userIsInTheMiddleOfTyping {
             userIsInTheMiddleOfTyping = false
             display.text = "0"
+        } else {
+            brain.undo()
+            evaluate()
+        }
+    }
+    
+    @IBAction func storeVariable(_ sender: UIButton) {
+        if let senderName = sender.currentTitle {
+            let variableName = senderName.replacingOccurrences(of: "→", with: "")
+            variables[variableName] = displayValue
+            updateVariableDisplay()
+        }
+        evaluate()
+    }
+    
+    private func updateVariableDisplay() {
+        var variablesText = ""
+        for (variable, value) in variables {
+            variablesText += "\(variable)=\(value), "
+        }
+        if variablesText.characters.count > 2 {
+            variablesText = String(variablesText.characters.dropLast(2))
+        }
+        variablesDisplay!.text = variablesText
+    }
+    
+    @IBAction func setVariable(_ sender: UIButton) {
+        if let variableName = sender.currentTitle {
+            brain.setOperand(variable: variableName)
+        }
+        evaluate()
+    }
+    
+    
+    func evaluate() {
+        let (result, resultIsPending, description) = brain.evaluate(using: variables)
+        if (result != nil) {
+            displayValue = result!
+        } else if (result == nil && resultIsPending) {
+            
+        } else {
+        }
+        
+        historyDisplay.text = description
+        if resultIsPending {
+            historyDisplay.text! += "..."
+        } else if result != nil {
+            historyDisplay.text! += "="
         }
     }
     
@@ -68,15 +123,7 @@ class ViewController: UIViewController {
         if let mathSymbol = sender.currentTitle {
             brain.performOperation(mathSymbol)
         }
-        if let result = brain.result {
-            displayValue = result
-        }
-        historyDisplay.text = brain.description
-        if brain.resultIsPending {
-            historyDisplay.text! += "..."
-        } else {
-            historyDisplay.text! += "="
-        }
+        evaluate()
     }
 }
 
